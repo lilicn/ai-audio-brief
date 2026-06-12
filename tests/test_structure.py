@@ -43,6 +43,17 @@ class StructureTests(unittest.TestCase):
             self.assertNotIn(path.name, forbidden_names, str(path))
             self.assertNotIn(path.suffix, forbidden_suffixes, str(path))
 
+    def test_readme_is_bilingual_with_english_default(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        readme = (root / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("[English](#english) | [中文](#中文)", readme)
+        self.assertIn("## English", readme)
+        self.assertIn("## 中文", readme)
+        self.assertLess(readme.index("## English"), readme.index("## 中文"))
+        self.assertIn("AI Audio Brief is a reusable GitHub Actions template", readme)
+        self.assertIn("AI Audio Brief 是一个可复用的 GitHub Actions 模板", readme)
+
 
 if __name__ == "__main__":
     unittest.main()
