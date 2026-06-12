@@ -1,0 +1,11 @@
+{
+  "podcast_title": "AI VC Morning Brief",
+  "podcast_description": "Daily Chinese briefings on AI, VC, AI infrastructure, agents, robotics, Physical AI, startup funding, and Silicon Valley technology news.",
+  "output_language": "zh",
+  "category": "Business",
+  "explicit": false,
+  "episode_slug": "ai-vc-daily",
+  "prompt_path": "prompts/ai_vc_morning_brief.zh.md",
+  "timezone": "America/Los_Angeles",
+  "local_run_time": "07:50"
+}

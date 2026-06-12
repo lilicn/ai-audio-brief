@@ -1,0 +1,12 @@
+[project]
+name = "ai-audio-brief"
+version = "0.1.0"
+description = "Reusable GitHub Actions template that turns a prompt into an audio brief and podcast RSS feed."
+requires-python = ">=3.11"
+
+[project.scripts]
+ai-vc-podcast = "ai_vc_podcast.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ai_vc_podcast*"]
