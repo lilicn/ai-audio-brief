@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 from typing import Any
+
+RETRYABLE_STATUS_CODES = {408, 409, 429, 500, 502, 503, 504}
 
 
 class OpenAIClient:
@@ -22,7 +26,7 @@ class OpenAIClient:
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=180) as response:
+        with self._open_with_retries(request) as response:
             return json.loads(response.read().decode("utf-8"))
 
     def _request_bytes(self, url: str, payload: dict[str, Any]) -> bytes:
@@ -35,8 +39,26 @@ class OpenAIClient:
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=180) as response:
+        with self._open_with_retries(request) as response:
             return response.read()
+
+    def _open_with_retries(self, request: urllib.request.Request):
+        max_retries = int(os.environ.get("OPENAI_MAX_RETRIES") or "4")
+        for attempt in range(max_retries + 1):
+            try:
+                return urllib.request.urlopen(request, timeout=180)
+            except urllib.error.HTTPError as error:
+                body = error.read().decode("utf-8", errors="replace")
+                if error.code in RETRYABLE_STATUS_CODES and attempt < max_retries:
+                    time.sleep(retry_delay_seconds(error, attempt))
+                    continue
+                detail = body or error.reason
+                raise RuntimeError(f"OpenAI API request failed with HTTP {error.code}: {detail}") from error
+            except urllib.error.URLError as error:
+                if attempt < max_retries:
+                    time.sleep(retry_delay_seconds(None, attempt))
+                    continue
+                raise RuntimeError(f"OpenAI API request failed: {error.reason}") from error
 
     def generate_brief(self, prompt: str) -> str:
         model = os.environ.get("OPENAI_TEXT_MODEL") or "gpt-4.1-mini"
@@ -79,3 +101,16 @@ def extract_text(response: dict[str, Any]) -> str:
     if not text:
         raise RuntimeError("OpenAI response did not contain text.")
     return text
+
+
+def retry_delay_seconds(error: urllib.error.HTTPError | None, attempt: int) -> float:
+    if error is not None:
+        retry_after = error.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(float(retry_after), 60.0)
+            except ValueError:
+                pass
+
+    base_delay = float(os.environ.get("OPENAI_RETRY_BASE_SECONDS") or "2")
+    return min(base_delay * (2**attempt), 30.0)

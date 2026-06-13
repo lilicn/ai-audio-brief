@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import io
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
@@ -29,6 +31,20 @@ class EmptyBriefClient(FakeClient):
 class EmptyAudioClient(FakeClient):
     def generate_speech_mp3(self, text: str) -> bytes:
         return b""
+
+
+class FakeResponse:
+    def __init__(self, body: bytes) -> None:
+        self.body = body
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *_args) -> None:  # type: ignore[no-untyped-def]
+        return None
+
+    def read(self) -> bytes:
+        return self.body
 
 
 class GenerateTests(unittest.TestCase):
@@ -69,6 +85,24 @@ class GenerateTests(unittest.TestCase):
         self.assertEqual(calls[0]["tool_choice"], "required")
         self.assertEqual(calls[1]["model"], "gpt-4o-mini-tts")
         self.assertEqual(calls[1]["voice"], "alloy")
+
+    def test_openai_client_retries_rate_limits(self) -> None:
+        rate_limit = urllib.error.HTTPError(
+            url="https://api.openai.com/v1/audio/speech",
+            code=429,
+            msg="Too Many Requests",
+            hdrs={"Retry-After": "0"},
+            fp=io.BytesIO(b'{"error":{"message":"rate limited"}}'),
+        )
+
+        client = OpenAIClient(api_key="test")
+        with patch("urllib.request.urlopen", side_effect=[rate_limit, FakeResponse(b"mp3")]) as urlopen:
+            with patch("time.sleep") as sleep:
+                audio = client.generate_speech_mp3("text")
+
+        self.assertEqual(audio, b"mp3")
+        self.assertEqual(urlopen.call_count, 2)
+        sleep.assert_called_once_with(0.0)
 
     def test_markdown_to_spoken_text_removes_urls(self) -> None:
         spoken = markdown_to_spoken_text("# 标题\n\n[Reuters](https://example.com)")

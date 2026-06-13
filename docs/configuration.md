@@ -50,9 +50,13 @@ OPENAI_TEXT_MODEL
 OPENAI_WEB_SEARCH_TOOL
 OPENAI_TTS_MODEL
 OPENAI_TTS_VOICE
+OPENAI_MAX_RETRIES
+OPENAI_RETRY_BASE_SECONDS
 ```
 
 `OPENAI_WEB_SEARCH_TOOL` defaults to `web_search`, the current hosted web search tool for the Responses API.
+
+`OPENAI_MAX_RETRIES` defaults to `4`. `OPENAI_RETRY_BASE_SECONDS` defaults to `2`.
 
 `OUTPUT_LANGUAGE` supports only:
 
