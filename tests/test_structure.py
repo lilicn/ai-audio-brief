@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -39,9 +40,20 @@ class StructureTests(unittest.TestCase):
         forbidden_names = {".DS_Store", "__pycache__"}
         forbidden_suffixes = {".pyc"}
 
-        for path in root.rglob("*"):
-            self.assertNotIn(path.name, forbidden_names, str(path))
-            self.assertNotIn(path.suffix, forbidden_suffixes, str(path))
+        result = subprocess.run(
+            ["git", "ls-files"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        tracked_files = result.stdout.splitlines()
+
+        self.assertGreater(len(tracked_files), 0)
+        for file_name in tracked_files:
+            path = Path(file_name)
+            self.assertNotIn(path.name, forbidden_names, file_name)
+            self.assertNotIn(path.suffix, forbidden_suffixes, file_name)
 
     def test_readme_is_bilingual_with_english_default(self) -> None:
         root = Path(__file__).resolve().parents[1]
