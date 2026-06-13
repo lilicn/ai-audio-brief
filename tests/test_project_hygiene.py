@@ -39,6 +39,7 @@ class ProjectHygieneTests(unittest.TestCase):
         workflow = (root / ".github" / "workflows" / "daily-podcast.yml").read_text(encoding="utf-8")
 
         self.assertIn("secrets.OPENAI_API_KEY", workflow)
+        self.assertIn('FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"', workflow)
         self.assertIn("actions/deploy-pages@v4", workflow)
         self.assertIn("cron: \"*/10 * * * *\"", workflow)
         self.assertIn("python -m ai_vc_podcast should-run", workflow)
