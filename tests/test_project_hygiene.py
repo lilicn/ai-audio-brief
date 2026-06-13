@@ -47,6 +47,8 @@ class ProjectHygieneTests(unittest.TestCase):
         self.assertIn("EPISODE_SLUG: ${{ vars.EPISODE_SLUG }}", workflow)
         self.assertIn("PODCAST_LOCAL_RUN_TIME: ${{ vars.PODCAST_LOCAL_RUN_TIME }}", workflow)
         self.assertIn("OUTPUT_LANGUAGE: ${{ vars.OUTPUT_LANGUAGE }}", workflow)
+        self.assertIn("OPENAI_MAX_RETRIES: ${{ vars.OPENAI_MAX_RETRIES }}", workflow)
+        self.assertIn("OPENAI_RETRY_BASE_SECONDS: ${{ vars.OPENAI_RETRY_BASE_SECONDS }}", workflow)
         self.assertNotIn("OWNER_EMAIL: owner@example.com", workflow)
 
     def test_public_config_makes_project_reusable(self) -> None:
